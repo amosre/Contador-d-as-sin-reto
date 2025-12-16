@@ -5,15 +5,17 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Días sin retos</title>
+  <meta name="description" content="Marcador de días sin retos con reset, PIN y actualización automática." />
   <style>
     :root {
-      --bg: #0f172a;       /* fondo */
-      --card: #111827;     /* tarjeta */
-      --text: #e5e7eb;     /* texto principal */
-      --accent: #22c55e;   /* verde éxito */
-      --accent-2: #f59e0b; /* amarillo para botón */
-      --danger: #ef4444;   /* rojo para reset */
+      --bg: #0f172a;
+      --card: #111827;
+      --text: #e5e7eb;
+      --accent: #22c55e;
+      --accent-2: #f59e0b;
+      --danger: #ef4444;
     }
+    * { box-sizing: border-box; }
     body {
       margin: 0; min-height: 100vh;
       display: grid; place-items: center;
@@ -76,6 +78,10 @@
       border: 1px solid rgba(255,255,255,0.08); border-radius: 10px;
       padding: 10px 12px; min-width: 200px;
     }
+    /* Accesibilidad y foco */
+    button:focus-visible, input:focus-visible {
+      outline: 2px solid #60a5fa; outline-offset: 2px;
+    }
   </style>
 </head>
 <body>
@@ -97,24 +103,26 @@
       <button class="warn" id="adjust">Ajustar manualmente +1 día</button>
 
       <div class="row">
-        <input type="password" id="pin" placeholder="PIN para reset (opcional)" />
+        <input type="password" id="pin" placeholder="PIN para reset (opcional)" aria-label="PIN" />
         <button class="danger" id="reset">Resetear a 0</button>
       </div>
     </div>
 
-    <div class="tiny">El contador se guarda en este navegador (localStorage) y se actualiza automáticamente cada medianoche.</div>
+    <div class="tiny">
+      El contador se guarda en este navegador (localStorage) y se actualiza automáticamente cada medianoche.
+    </div>
   </main>
 
   <script>
-    // --- Utilidades de fecha ---
-    const fmt = new Intl.DateTimeFormat('es-CL', { dateStyle: 'long' }); // ajusta país si prefieres
+    // Formato de fecha para Argentina
+    const fmt = new Intl.DateTimeFormat('es-AR', { dateStyle: 'long' });
 
+    // --- Utilidades de fecha ---
     function startOfDay(date = new Date()) {
       const d = new Date(date);
       d.setHours(0,0,0,0);
       return d;
     }
-
     function daysBetween(a, b) {
       const msPerDay = 24 * 60 * 60 * 1000;
       const startA = startOfDay(a).getTime();
@@ -130,17 +138,14 @@
       const raw = localStorage.getItem(KEY);
       return raw ? new Date(raw) : null;
     }
-
     function setStartDate(date) {
       localStorage.setItem(KEY, startOfDay(date).toISOString());
       render();
     }
-
     function setPin(pin) {
       if (pin) localStorage.setItem(PIN_KEY, pin);
       else localStorage.removeItem(PIN_KEY);
     }
-
     function getPin() { return localStorage.getItem(PIN_KEY); }
 
     // --- Render ---
@@ -159,14 +164,14 @@
       metaEl.textContent = `Desde: ${fmt.format(start)}`;
     }
 
-    // --- Actualización automática a medianoche ---
+    // --- Actualización automática a medianoche local ---
     function scheduleMidnightTick() {
       const now = new Date();
       const nextMidnight = new Date(now);
-      nextMidnight.setHours(24,0,0,0); // próxima medianoche local
+      nextMidnight.setHours(24,0,0,0); // próxima medianoche
       setTimeout(() => {
         render();
-        scheduleMidnightTick(); // reprogramar
+        scheduleMidnightTick();
       }, nextMidnight - now);
     }
 
@@ -176,7 +181,6 @@
     });
 
     document.getElementById('adjust').addEventListener('click', () => {
-      // Ajusta +1 día al inicio para corregir manualmente
       const start = getStartDate();
       if (!start) return setStartDate(new Date());
       const adjusted = new Date(start);
@@ -188,20 +192,15 @@
       const pinInput = document.getElementById('pin').value.trim();
       const savedPin = getPin();
 
-      // Si hay PIN guardado, exigir coincidencia
       if (savedPin && pinInput !== savedPin) {
         alert('PIN incorrecto. No se realizó el reset.');
         return;
       }
-
-      // Si no hay PIN guardado pero el usuario ingresó uno, lo guardamos
       if (!savedPin && pinInput) {
         setPin(pinInput);
         alert('PIN establecido para futuros resets.');
       }
-
-      // Reset: iniciar desde hoy (contador vuelve a 0)
-      setStartDate(new Date());
+      setStartDate(new Date      setStartDate(new Date()); // reset: hoy
     });
 
     // --- Inicio ---
