@@ -1,0 +1,211 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Días sin retos</title>
+  <style>
+    :root {
+      --bg: #0f172a;       /* fondo */
+      --card: #111827;     /* tarjeta */
+      --text: #e5e7eb;     /* texto principal */
+      --accent: #22c55e;   /* verde éxito */
+      --accent-2: #f59e0b; /* amarillo para botón */
+      --danger: #ef4444;   /* rojo para reset */
+    }
+    body {
+      margin: 0; min-height: 100vh;
+      display: grid; place-items: center;
+      background: radial-gradient(1200px 600px at 50% -200px, #1f2937, var(--bg));
+      color: var(--text); font-family: system-ui, "Segoe UI", Roboto, Arial, sans-serif;
+    }
+    .board {
+      width: min(900px, 92vw);
+      background: linear-gradient(180deg, #0b1220, var(--card));
+      border-radius: 20px; padding: 40px 32px; box-shadow: 0 20px 60px rgba(0,0,0,0.55);
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+    .title {
+      font-size: clamp(28px, 4vw, 40px);
+      font-weight: 700; letter-spacing: 0.4px;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .title .dot {
+      width: 14px; height: 14px; border-radius: 50%; background: var(--accent);
+      box-shadow: 0 0 18px var(--accent);
+    }
+    .counter {
+      margin-top: 18px;
+      display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap;
+    }
+    .days {
+      font-variant-numeric: tabular-nums lining-nums;
+      font-size: clamp(70px, 12vw, 160px);
+      font-weight: 800; line-height: 1; color: #ffffff;
+      text-shadow: 0 2px 0 rgba(255,255,255,0.04), 0 8px 40px rgba(34,197,94,0.25);
+    }
+    .label {
+      font-size: clamp(16px, 2.3vw, 22px); color: #9ca3af; font-weight: 500;
+    }
+    .meta {
+      margin-top: 18px; color: #9ca3af; font-size: clamp(14px, 1.9vw, 16px);
+    }
+    .controls {
+      margin-top: 28px; display: flex; gap: 12px; flex-wrap: wrap;
+    }
+    button {
+      all: unset; background: #1f2937; color: var(--text);
+      padding: 12px 18px; border-radius: 12px; cursor: pointer;
+      border: 1px solid rgba(255,255,255,0.08);
+      transition: transform 120ms ease, background 120ms ease, box-shadow 120ms ease;
+      font-weight: 600;
+    }
+    button:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(0,0,0,0.35); }
+    .primary { background: #163024; border-color: rgba(34,197,94,0.35); }
+    .warn    { background: #2b1f0c; border-color: rgba(245,158,11,0.35); }
+    .danger  { background: #2b0f10; border-color: rgba(239,68,68,0.35); }
+    .tiny {
+      font-size: 12px; color: #7f8ea3; margin-top: 8px;
+    }
+    .row {
+      display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 10px;
+    }
+    input[type="password"] {
+      background: #0b1220; color: var(--text);
+      border: 1px solid rgba(255,255,255,0.08); border-radius: 10px;
+      padding: 10px 12px; min-width: 200px;
+    }
+  </style>
+</head>
+<body>
+  <main class="board" role="main" aria-labelledby="titulo">
+    <div class="title" id="titulo">
+      <span class="dot" aria-hidden="true"></span>
+      <span>Días sin retos</span>
+    </div>
+
+    <section class="counter" aria-live="polite">
+      <div class="days" id="days">0</div>
+      <div class="label">días</div>
+    </section>
+
+    <div class="meta" id="meta">Desde: —</div>
+
+    <div class="controls" aria-label="Controles">
+      <button class="primary" id="setStart">Establecer fecha de inicio (hoy)</button>
+      <button class="warn" id="adjust">Ajustar manualmente +1 día</button>
+
+      <div class="row">
+        <input type="password" id="pin" placeholder="PIN para reset (opcional)" />
+        <button class="danger" id="reset">Resetear a 0</button>
+      </div>
+    </div>
+
+    <div class="tiny">El contador se guarda en este navegador (localStorage) y se actualiza automáticamente cada medianoche.</div>
+  </main>
+
+  <script>
+    // --- Utilidades de fecha ---
+    const fmt = new Intl.DateTimeFormat('es-CL', { dateStyle: 'long' }); // ajusta país si prefieres
+
+    function startOfDay(date = new Date()) {
+      const d = new Date(date);
+      d.setHours(0,0,0,0);
+      return d;
+    }
+
+    function daysBetween(a, b) {
+      const msPerDay = 24 * 60 * 60 * 1000;
+      const startA = startOfDay(a).getTime();
+      const startB = startOfDay(b).getTime();
+      return Math.floor((startB - startA) / msPerDay);
+    }
+
+    // --- Persistencia ---
+    const KEY = 'dias_sin_retos_start';
+    const PIN_KEY = 'dias_sin_retos_pin';
+
+    function getStartDate() {
+      const raw = localStorage.getItem(KEY);
+      return raw ? new Date(raw) : null;
+    }
+
+    function setStartDate(date) {
+      localStorage.setItem(KEY, startOfDay(date).toISOString());
+      render();
+    }
+
+    function setPin(pin) {
+      if (pin) localStorage.setItem(PIN_KEY, pin);
+      else localStorage.removeItem(PIN_KEY);
+    }
+
+    function getPin() { return localStorage.getItem(PIN_KEY); }
+
+    // --- Render ---
+    const daysEl = document.getElementById('days');
+    const metaEl = document.getElementById('meta');
+
+    function render() {
+      const start = getStartDate();
+      if (!start) {
+        daysEl.textContent = '0';
+        metaEl.textContent = 'Desde: —';
+        return;
+      }
+      const diff = Math.max(0, daysBetween(start, new Date()));
+      daysEl.textContent = String(diff);
+      metaEl.textContent = `Desde: ${fmt.format(start)}`;
+    }
+
+    // --- Actualización automática a medianoche ---
+    function scheduleMidnightTick() {
+      const now = new Date();
+      const nextMidnight = new Date(now);
+      nextMidnight.setHours(24,0,0,0); // próxima medianoche local
+      setTimeout(() => {
+        render();
+        scheduleMidnightTick(); // reprogramar
+      }, nextMidnight - now);
+    }
+
+    // --- Eventos UI ---
+    document.getElementById('setStart').addEventListener('click', () => {
+      setStartDate(new Date()); // hoy
+    });
+
+    document.getElementById('adjust').addEventListener('click', () => {
+      // Ajusta +1 día al inicio para corregir manualmente
+      const start = getStartDate();
+      if (!start) return setStartDate(new Date());
+      const adjusted = new Date(start);
+      adjusted.setDate(adjusted.getDate() - 1); // mover inicio un día atrás => suma 1 al contador
+      setStartDate(adjusted);
+    });
+
+    document.getElementById('reset').addEventListener('click', () => {
+      const pinInput = document.getElementById('pin').value.trim();
+      const savedPin = getPin();
+
+      // Si hay PIN guardado, exigir coincidencia
+      if (savedPin && pinInput !== savedPin) {
+        alert('PIN incorrecto. No se realizó el reset.');
+        return;
+      }
+
+      // Si no hay PIN guardado pero el usuario ingresó uno, lo guardamos
+      if (!savedPin && pinInput) {
+        setPin(pinInput);
+        alert('PIN establecido para futuros resets.');
+      }
+
+      // Reset: iniciar desde hoy (contador vuelve a 0)
+      setStartDate(new Date());
+    });
+
+    // --- Inicio ---
+    render();
+    scheduleMidnightTick();
+  </script>
+</body>
