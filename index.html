@@ -4,57 +4,265 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Contador Global</title>
+  <title>Días sin reto</title>
   <style>
-    body { font-family: Arial, sans-serif; display:flex; align-items:center; justify-content:center; height:100vh; background:#f6f7fb; }
-    .card { background:#fff; padding:2rem 2.5rem; border-radius:12px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); text-align:center; }
-    h1 { margin:0 0 1rem; font-size:1.6rem; }
-    .count { font-size:3rem; font-weight:700; color:#2c3e50; }
-    .sub { margin-top:0.75rem; color:#6b7280; font-size:0.95rem; }
-    button { margin-top:1.25rem; padding:0.6rem 1rem; border:none; border-radius:8px; background:#2563eb; color:#fff; cursor:pointer; font-weight:600; }
-    button:hover { background:#1d4ed8; }
+    :root {
+      --bg: #f4f6f9;
+      --card: #ffffff;
+      --primary: #0ea5e9;
+      --primary-dark: #0284c7;
+      --text: #0f172a;
+      --muted: #6b7280;
+      --danger: #ef4444;
+      --danger-dark: #dc2626;
+    }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Noto Sans", "Helvetica Neue", "Apple Color Emoji", "Segoe UI Emoji";
+      background: var(--bg);
+      color: var(--text);
+      display: grid;
+      place-items: center;
+      min-height: 100vh;
+      padding: 1rem;
+    }
+    .card {
+      background: var(--card);
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+      max-width: 520px;
+      width: 100%;
+      padding: 2rem 2rem 1.5rem;
+    }
+    h1 {
+      margin: 0 0 0.75rem;
+      font-size: 1.75rem;
+      letter-spacing: 0.2px;
+    }
+    .count {
+      font-size: 4rem;
+      font-weight: 800;
+      line-height: 1;
+      margin: 0.25rem 0 0.5rem;
+      color: var(--text);
+    }
+    .sub {
+      color: var(--muted);
+      font-size: 0.98rem;
+      margin-top: 0.5rem;
+    }
+    .row {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 1.25rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    button {
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      padding: 0.7rem 1rem;
+      font-weight: 600;
+    }
+    .primary {
+      background: var(--primary);
+      color: #fff;
+    }
+    .primary:hover { background: var(--primary-dark); }
+    .danger {
+      background: var(--danger);
+      color: #fff;
+    }
+    .danger:hover { background: var(--danger-dark); }
+    .muted {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-top: 0.75rem;
+    }
+    .error {
+      color: var(--danger-dark);
+      margin-top: 0.5rem;
+      display: none;
+    }
+    .spinner {
+      width: 18px; height: 18px;
+      border: 2px solid rgba(2,132,199,0.25);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+      display: none;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
   <div class="card">
-    <h1>Visitas a esta página</h1>
-    <div class="count" id="count">...</div>
-    <div class="sub">Global para todos los que abran el link</div>
-    <button id="refresh">Actualizar</button>
+    <h1>Días sin reto</h1>
+    <div class="count" id="count">0</div>
+
+    <div class="sub">
+      Desde: <span id="start-date">—</span>
+    </div>
+
+    <div class="row">
+      <button class="primary" id="refresh">Actualizar ahora</button>
+      <button class="danger" id="reset">Reiniciar contador</button>
+      <div class="spinner" id="spinner" aria-hidden="true"></div>
+    </div>
+
+    <div class="muted" id="last-update">Última actualización: —</div>
+    <div class="error" id="error"></div>
   </div>
 
   <script>
-    // Cambia estos dos valores para "tu contador"
-    const NAMESPACE = "andre-mosre-project";  // Usa un nombre único (empresa/proyecto)
-    const KEY = "contador-global";            // Nombre del contador
+    // === CONFIGURA TU ESPACIO ÚNICO EN COUNTAPI ===
+    const NAMESPACE = "andre-mosre-hidraulica-2025"; // Cambia por uno único
+    const KEY = "dias-sin-reto-start-ts";            // Almacena la fecha de inicio (timestamp)
 
-    async function getAndIncrement() {
-      const url = `https://api.countapi.xyz/hit/${encodeURIComponent(NAMESPACE)}/${encodeURIComponent(KEY)}`;
-      const res = await fetch(url);
-      if (!res.ok) throw new Error("Error al consultar CountAPI");
-      const data = await res.json();
-      document.getElementById("count").textContent = data.value.toLocaleString("es-ES");
-    }
+    const elCount = document.getElementById("count");
+    const elStart = document.getElementById("start-date");
+    const elError = document.getElementById("error");
+    const elSpinner = document.getElementById("spinner");
+    const elLastUpd = document.getElementById("last-update");
+    const btnRefresh = document.getElementById("refresh");
+    const btnReset = document.getElementById("reset");
 
-    async function ensureExists() {
-      // Crea el contador si no existe, con valor inicial 0
-      const url = `https://api.countapi.xyz/create?namespace=${encodeURIComponent(NAMESPACE)}&key=${encodeURIComponent(KEY)}&value=0`;
-      await fetch(url); // No importa si ya existe; si existe, ignora
-    }
-
-    async function init() {
+    // Formato de fecha en español (Chile)
+    function formatDate(dt) {
       try {
-        await ensureExists();
-        await getAndIncrement();
-      } catch (e) {
-        document.getElementById("count").textContent = "Error";
-        console.error(e);
+        return new Intl.DateTimeFormat("es-CL", {
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric"
+        }).format(dt);
+      } catch {
+        return dt.toLocaleDateString("es-CL");
       }
     }
 
-    document.getElementById("refresh").addEventListener("click", getAndIncrement);
-    init();
+    function showSpinner(active) {
+      elSpinner.style.display = active ? "inline-block" : "none";
+      btnRefresh.disabled = active;
+      btnReset.disabled = active;
+    }
+
+    function showError(msg) {
+      elError.textContent = msg || "";
+      elError.style.display = msg ? "block" : "none";
+    }
+
+    function markLastUpdate() {
+      const now = new Date();
+      elLastUpd.textContent = "Última actualización: " +
+        new Intl.DateTimeFormat("es-CL", {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit"
+        }).format(now);
+    }
+
+    // === LÓGICA DE CÓMPUTO DE DÍAS ===
+    function daysSince(startTs) {
+      const start = new Date(startTs);
+      const now = new Date();
+
+      // Truncar a medianoche local para contar "días naturales"
+      const startMid = new Date(start); startMid.setHours(0,0,0,0);
+      const nowMid = new Date(now);     nowMid.setHours(0,0,0,0);
+
+      const diffMs = nowMid - startMid;
+      const days = Math.floor(diffMs / 86400000);
+      return Math.max(0, days);
+    }
+
+    // === API CountAPI ===
+    async function countapiGet() {
+      const url = `https://api.countapi.xyz/get/${encodeURIComponent(NAMESPACE)}/${encodeURIComponent(KEY)}`;
+      const res = await fetch(url);
+      if (!res.ok) return null;
+      const data = await res.json();
+      return Number(data.value);
+    }
+    async function countapiCreate(initialTs) {
+      const url = `https://api.countapi.xyz/create?namespace=${encodeURIComponent(NAMESPACE)}&key=${encodeURIComponent(KEY)}&value=${initialTs}`;
+      return fetch(url); // Si ya existe, lo deja como está
+    }
+    async function countapiSet(newTs) {
+      const url = `https://api.countapi.xyz/set/${encodeURIComponent(NAMESPACE)}/${encodeURIComponent(KEY)}?value=${newTs}`;
+      const res = await fetch(url, { method: "GET" });
+      if (!res.ok) throw new Error("No se pudo establecer la fecha de inicio en CountAPI");
+      return res.json();
+    }
+
+    async function ensureStartExists() {
+      let ts = await countapiGet();
+      if (!ts || Number.isNaN(ts)) {
+        const nowTs = Date.now();
+        await countapiCreate(nowTs);
+        ts = await countapiGet();
+        // Si create no tomó, forza set
+        if (!ts || Number.isNaN(ts)) {
+          await countapiSet(nowTs);
+          ts = await countapiGet();
+        }
+      }
+      return ts;
+    }
+
+    async function updateAll() {
+      showError("");
+      showSpinner(true);
+      try {
+        const startTs = await ensureStartExists();
+        const d = daysSince(startTs);
+        elCount.textContent = d.toLocaleString("es-CL");
+        elStart.textContent = formatDate(new Date(startTs));
+        markLastUpdate();
+      } catch (e) {
+        console.error(e);
+        showError("Ocurrió un error al obtener/actualizar el contador.");
+      } finally {
+        showSpinner(false);
+      }
+    }
+
+    async function resetCounter() {
+      const ok = confirm("¿Reiniciar el contador y establecer la fecha de inicio como hoy?");
+      if (!ok) return;
+      showError("");
+      showSpinner(true);
+      try {
+        const nowTs = Date.now();
+        await countapiSet(nowTs);
+        await updateAll();
+      } catch (e) {
+        console.error(e);
+        showError("No se pudo reiniciar el contador.");
+      } finally {
+        showSpinner(false);
+      }
+    }
+
+    // Actualización al cambiar el día (medianoche local)
+    function scheduleMidnightRefresh() {
+      const now = new Date();
+      const nextMidnight = new Date(now);
+      nextMidnight.setHours(24,0,0,0); // siguiente medianoche local
+      const ms = nextMidnight - now;
+      setTimeout(() => {
+        updateAll();
+        scheduleMidnightRefresh();
+      }, ms);
+    }
+
+    // Eventos
+    btnRefresh.addEventListener("click", updateAll);
+    btnReset.addEventListener("click", resetCounter);
+
+       // Init
+    updateAll();
+    scheduleMidnightRefresh();
   </script>
 </body>
-</html>
-``
