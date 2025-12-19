@@ -4,183 +4,57 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Días sin retos</title>
-  <meta name="description" content="Marcador de días sin retos con reset, PIN y actualización automática." />
+  <title>Contador Global</title>
   <style>
-    :root {
-      --bg: #0f172a; --card: #111827; --text: #e5e7eb;
-      --accent: #22c55e; --accent-2: #f59e0b; --danger: #ef4444;
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0; min-height: 100vh;
-      display: grid; place-items: center;
-      background: radial-gradient(1200px 600px at 50% -200px, #1f2937, var(--bg));
-      color: var(--text); font-family: system-ui, "Segoe UI", Roboto, Arial, sans-serif;
-    }
-    .board {
-      width: min(900px, 92vw);
-      background: linear-gradient(180deg, #0b1220, var(--card));
-      border-radius: 20px; padding: 40px 32px; box-shadow: 0 20px 60px rgba(0,0,0,0.55);
-      border: 1px solid rgba(255,255,255,0.06);
-    }
-    .title { font-size: clamp(28px, 4vw, 40px); font-weight: 700; display: flex; align-items: center; gap: 12px; }
-    .title .dot { width: 14px; height: 14px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 18px var(--accent); }
-    .counter { margin-top: 18px; display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; }
-    .days { font-variant-numeric: tabular-nums lining-nums; font-size: clamp(70px, 12vw, 160px); font-weight: 800; line-height: 1; color: #fff; text-shadow: 0 2px 0 rgba(255,255,255,0.04), 0 8px 40px rgba(34,197,94,0.25); }
-    .label { font-size: clamp(16px, 2.3vw, 22px); color: #9ca3af; font-weight: 500; }
-    .meta { margin-top: 18px; color: #9ca3af; font-size: clamp(14px, 1.9vw, 16px); }
-    .controls { margin-top: 28px; display: flex; gap: 12px; flex-wrap: wrap; }
-    button {
-      all: unset; display:inline-block; background: #1f2937; color: var(--text);
-      padding: 12px 18px; border-radius: 12px; cursor: pointer;
-      border: 1px solid rgba(255,255,255,0.08);
-      transition: transform 120ms ease, background 120ms ease, box-shadow 120ms ease;
-      font-weight: 600; user-select: none;
-    }
-    button:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(0,0,0,0.35); }
-    .primary { background: #163024; border-color: rgba(34,197,94,0.35); }
-    .warn    { background: #2b1f0c; border-color: rgba(245,158,11,0.35); }
-    .danger  { background: #2b0f10; border-color: rgba(239,68,68,0.35); }
-    .tiny { font-size: 12px; color: #7f8ea3; margin-top: 8px; }
-    .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 10px; }
-    input[type="password"] {
-      background: #0b1220; color: var(--text);
-      border: 1px solid rgba(255,255,255,0.08); border-radius: 10px;
-      padding: 10px 12px; min-width: 200px;
-    }
-    button:focus-visible, input:focus-visible { outline: 2px solid #60a5fa; outline-offset: 2px; }
+    body { font-family: Arial, sans-serif; display:flex; align-items:center; justify-content:center; height:100vh; background:#f6f7fb; }
+    .card { background:#fff; padding:2rem 2.5rem; border-radius:12px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); text-align:center; }
+    h1 { margin:0 0 1rem; font-size:1.6rem; }
+    .count { font-size:3rem; font-weight:700; color:#2c3e50; }
+    .sub { margin-top:0.75rem; color:#6b7280; font-size:0.95rem; }
+    button { margin-top:1.25rem; padding:0.6rem 1rem; border:none; border-radius:8px; background:#2563eb; color:#fff; cursor:pointer; font-weight:600; }
+    button:hover { background:#1d4ed8; }
   </style>
 </head>
 <body>
-  <main class="board" role="main" aria-labelledby="titulo">
-    <div class="title" id="titulo">
-      <span class="dot" aria-hidden="true"></span>
-      <span>Días sin retos</span>
-    </div>
-
-    <section class="counter" aria-live="polite">
-      <div class="days" id="days">0</div>
-      <div class="label">días</div>
-    </section>
-
-    <div class="meta" id="meta">Desde: —</div>
-
-    <div class="controls" aria-label="Controles">
-      <button class="primary" id="setStart" type="button" aria-label="Establecer fecha de inicio">Establecer fecha de inicio (hoy)</button>
-      <button class="warn" id="adjust" type="button" aria-label="Ajustar +1 día">Ajustar manualmente +1 día</button>
-      <div class="row">
-        <input type="password" id="pin" placeholder="PIN para reset (opcional)" aria-label="PIN" />
-        <button class="danger" id="reset" type="button" aria-label="Resetear">Resetear a 0</button>
-      </div>
-    </div>
-
-    <div class="tiny">El contador se guarda en este navegador (localStorage) y se actualiza automáticamente cada medianoche.</div>
-  </main>
+  <div class="card">
+    <h1>Visitas a esta página</h1>
+    <div class="count" id="count">...</div>
+    <div class="sub">Global para todos los que abran el link</div>
+    <button id="refresh">Actualizar</button>
+  </div>
 
   <script>
-    // Aseguramos que el DOM esté listo antes de registrar eventos
-    document.addEventListener('DOMContentLoaded', function() {
+    // Cambia estos dos valores para "tu contador"
+    const NAMESPACE = "andre-mosre-project";  // Usa un nombre único (empresa/proyecto)
+    const KEY = "contador-global";            // Nombre del contador
+
+    async function getAndIncrement() {
+      const url = `https://api.countapi.xyz/hit/${encodeURIComponent(NAMESPACE)}/${encodeURIComponent(KEY)}`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("Error al consultar CountAPI");
+      const data = await res.json();
+      document.getElementById("count").textContent = data.value.toLocaleString("es-ES");
+    }
+
+    async function ensureExists() {
+      // Crea el contador si no existe, con valor inicial 0
+      const url = `https://api.countapi.xyz/create?namespace=${encodeURIComponent(NAMESPACE)}&key=${encodeURIComponent(KEY)}&value=0`;
+      await fetch(url); // No importa si ya existe; si existe, ignora
+    }
+
+    async function init() {
       try {
-        const fmt = new Intl.DateTimeFormat('es-AR', { dateStyle: 'long' });
-
-        function startOfDay(date = new Date()) {
-          const d = new Date(date);
-          d.setHours(0,0,0,0);
-          return d;
-        }
-        function daysBetween(a, b) {
-          const msPerDay = 24 * 60 * 60 * 1000;
-          const startA = startOfDay(a).getTime();
-          const startB = startOfDay(b).getTime();
-          return Math.floor((startB - startA) / msPerDay);
-        }
-
-        const KEY = 'dias_sin_retos_start';
-        const PIN_KEY = 'dias_sin_retos_pin';
-
-        function getStartDate() {
-          const raw = localStorage.getItem(KEY);
-          return raw ? new Date(raw) : null;
-        }
-        function setStartDate(date) {
-          localStorage.setItem(KEY, startOfDay(date).toISOString());
-          render();
-        }
-        function setPin(pin) {
-          if (pin) localStorage.setItem(PIN_KEY, pin);
-          else localStorage.removeItem(PIN_KEY);
-        }
-        function getPin() { return localStorage.getItem(PIN_KEY); }
-
-        const daysEl = document.getElementById('days');
-        const metaEl = document.getElementById('meta');
-        const btnSetStart = document.getElementById('setStart');
-        const btnAdjust   = document.getElementById('adjust');
-        const btnReset    = document.getElementById('reset');
-        const pinInput    = document.getElementById('pin');
-
-        // Validación de elementos (si algún ID no se encuentra, avisamos en consola)
-        const missing = [
-          ['days', daysEl], ['meta', metaEl],
-          ['setStart', btnSetStart], ['adjust', btnAdjust],
-          ['reset', btnReset], ['pin', pinInput]
-        ].filter(([id, el]) => !el).map(([id]) => id);
-        if (missing.length) {
-          console.error('Faltan elementos en el DOM con IDs:', missing.join(', '));
-        }
-
-        function render() {
-          const start = getStartDate();
-          if (!start) {
-            daysEl && (daysEl.textContent = '0');
-            metaEl && (metaEl.textContent = 'Desde: —');
-            return;
-          }
-          const diff = Math.max(0, daysBetween(start, new Date()));
-          daysEl && (daysEl.textContent = String(diff));
-          metaEl && (metaEl.textContent = `Desde: ${fmt.format(start)}`);
-        }
-
-        function scheduleMidnightTick() {
-          const now = new Date();
-          const nextMidnight = new Date(now);
-          nextMidnight.setHours(24,0,0,0);
-          setTimeout(() => { render(); scheduleMidnightTick(); }, nextMidnight - now);
-        }
-
-        btnSetStart && btnSetStart.addEventListener('click', () => {
-          setStartDate(new Date()); // hoy
-        });
-
-        btnAdjust && btnAdjust.addEventListener('click', () => {
-          const start = getStartDate();
-          if (!start) return setStartDate(new Date());
-          const adjusted = new Date(start);
-          adjusted.setDate(adjusted.getDate() - 1); // sumar 1 al contador
-          setStartDate(adjusted);
-        });
-
-        btnReset && btnReset.addEventListener('click', () => {
-          const pinInputVal = (pinInput && pinInput.value || '').trim();
-          const savedPin = getPin();
-
-          if (savedPin && pinInputVal !== savedPin) {
-            alert('PIN incorrecto. No se realizó el reset.');
-            return;
-          }
-          if (!savedPin && pinInputVal) {
-            setPin(pinInputVal);
-            alert('PIN establecido para futuros resets.');
-          }
-          setStartDate(new Date()); // reset a hoy          setStartDate(new Date()); // reset a hoy
-        });
-
-        render();
-        scheduleMidnightTick();
-      } catch (err) {
-        console.error('Error inicializando el contador:', err);
+        await ensureExists();
+        await getAndIncrement();
+      } catch (e) {
+        document.getElementById("count").textContent = "Error";
+        console.error(e);
       }
-    });
+    }
+
+    document.getElementById("refresh").addEventListener("click", getAndIncrement);
+    init();
   </script>
 </body>
+</html>
+``
