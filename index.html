@@ -7,92 +7,24 @@
   <title>Días sin reto</title>
   <style>
     :root {
-      --bg: #f4f6f9;
-      --card: #ffffff;
-      --primary: #0ea5e9;
-      --primary-dark: #0284c7;
-      --text: #0f172a;
-      --muted: #6b7280;
-      --danger: #ef4444;
-      --danger-dark: #dc2626;
+      --bg:#f4f6f9; --card:#fff; --primary:#0ea5e9; --primary-dark:#0284c7;
+      --text:#0f172a; --muted:#6b7280; --danger:#ef4444; --danger-dark:#dc2626;
     }
-    body {
-      margin: 0;
-      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Noto Sans", "Helvetica Neue", "Apple Color Emoji", "Segoe UI Emoji";
-      background: var(--bg);
-      color: var(--text);
-      display: grid;
-      place-items: center;
-      min-height: 100vh;
-      padding: 1rem;
-    }
-    .card {
-      background: var(--card);
-      border-radius: 16px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-      max-width: 520px;
-      width: 100%;
-      padding: 2rem 2rem 1.5rem;
-    }
-    h1 {
-      margin: 0 0 0.75rem;
-      font-size: 1.75rem;
-      letter-spacing: 0.2px;
-    }
-    .count {
-      font-size: 4rem;
-      font-weight: 800;
-      line-height: 1;
-      margin: 0.25rem 0 0.5rem;
-      color: var(--text);
-    }
-    .sub {
-      color: var(--muted);
-      font-size: 0.98rem;
-      margin-top: 0.5rem;
-    }
-    .row {
-      display: flex;
-      gap: 0.75rem;
-      margin-top: 1.25rem;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-    button {
-      border: none;
-      border-radius: 10px;
-      cursor: pointer;
-      padding: 0.7rem 1rem;
-      font-weight: 600;
-    }
-    .primary {
-      background: var(--primary);
-      color: #fff;
-    }
-    .primary:hover { background: var(--primary-dark); }
-    .danger {
-      background: var(--danger);
-      color: #fff;
-    }
-    .danger:hover { background: var(--danger-dark); }
-    .muted {
-      color: var(--muted);
-      font-size: 0.9rem;
-      margin-top: 0.75rem;
-    }
-    .error {
-      color: var(--danger-dark);
-      margin-top: 0.5rem;
-      display: none;
-    }
-    .spinner {
-      width: 18px; height: 18px;
-      border: 2px solid rgba(2,132,199,0.25);
-      border-top-color: var(--primary);
-      border-radius: 50%;
-      animation: spin 0.9s linear infinite;
-      display: none;
-    }
+    body { margin:0; font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial;
+      background:var(--bg); color:var(--text); display:grid; place-items:center; min-height:100vh; padding:1rem;}
+    .card { background:var(--card); border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,0.08);
+      max-width:520px; width:100%; padding:2rem 2rem 1.5rem;}
+    h1 { margin:0 0 0.75rem; font-size:1.75rem; }
+    .count { font-size:4rem; font-weight:800; line-height:1; margin:0.25rem 0 0.5rem;}
+    .sub { color:var(--muted); font-size:0.98rem; margin-top:0.5rem;}
+    .row { display:flex; gap:0.75rem; margin-top:1.25rem; align-items:center; flex-wrap:wrap;}
+    button { border:none; border-radius:10px; cursor:pointer; padding:0.7rem 1rem; font-weight:600;}
+    .primary { background:var(--primary); color:#fff;} .primary:hover{background:var(--primary-dark);}
+    .danger { background:var(--danger); color:#fff;} .danger:hover{background:var(--danger-dark);}
+    .muted { color:var(--muted); font-size:0.9rem; margin-top:0.75rem;}
+    .error { color:var(--danger-dark); margin-top:0.5rem; display:none;}
+    .spinner { width:18px; height:18px; border:2px solid rgba(2,132,199,0.25);
+      border-top-color:var(--primary); border-radius:50%; animation:spin 0.9s linear infinite; display:none;}
     @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
@@ -100,10 +32,7 @@
   <div class="card">
     <h1>Días sin reto</h1>
     <div class="count" id="count">0</div>
-
-    <div class="sub">
-      Desde: <span id="start-date">—</span>
-    </div>
+    <div class="sub">Desde: <span id="start-date">—</span></div>
 
     <div class="row">
       <button class="primary" id="refresh">Actualizar ahora</button>
@@ -116,9 +45,9 @@
   </div>
 
   <script>
-    // === CONFIGURA TU ESPACIO ÚNICO EN COUNTAPI ===
-    const NAMESPACE = "andre-mosre-hidraulica-2025"; // Cambia por uno único
-    const KEY = "dias-sin-reto-start-ts";            // Almacena la fecha de inicio (timestamp)
+    // === CONFIGURA TU ESPACIO ÚNICO ===
+    const NAMESPACE = "andre-mosre-hidraulica-2025"; // cámbialo por uno único y difícil de adivinar
+    const KEY = "dias-sin-reto-start-ts";            // guarda el timestamp de inicio
 
     const elCount = document.getElementById("count");
     const elStart = document.getElementById("start-date");
@@ -128,101 +57,85 @@
     const btnRefresh = document.getElementById("refresh");
     const btnReset = document.getElementById("reset");
 
-    // Formato de fecha en español (Chile)
     function formatDate(dt) {
       try {
         return new Intl.DateTimeFormat("es-CL", {
-          weekday: "long",
-          year: "numeric",
-          month: "long",
-          day: "numeric"
+          weekday: "long", year: "numeric", month: "long", day: "numeric"
         }).format(dt);
       } catch {
         return dt.toLocaleDateString("es-CL");
       }
     }
-
     function showSpinner(active) {
       elSpinner.style.display = active ? "inline-block" : "none";
-      btnRefresh.disabled = active;
-      btnReset.disabled = active;
+      btnRefresh.disabled = active; btnReset.disabled = active;
     }
-
     function showError(msg) {
-      elError.textContent = msg || "";
-      elError.style.display = msg ? "block" : "none";
+      elError.textContent = msg || ""; elError.style.display = msg ? "block" : "none";
     }
-
     function markLastUpdate() {
       const now = new Date();
       elLastUpd.textContent = "Última actualización: " +
-        new Intl.DateTimeFormat("es-CL", {
-          hour: "2-digit",
-          minute: "2-digit",
-          second: "2-digit"
-        }).format(now);
+        new Intl.DateTimeFormat("es-CL", {hour:"2-digit",minute:"2-digit",second:"2-digit"}).format(now);
     }
-
-    // === LÓGICA DE CÓMPUTO DE DÍAS ===
     function daysSince(startTs) {
-      const start = new Date(startTs);
-      const now = new Date();
-
-      // Truncar a medianoche local para contar "días naturales"
-      const startMid = new Date(start); startMid.setHours(0,0,0,0);
-      const nowMid = new Date(now);     nowMid.setHours(0,0,0,0);
-
-      const diffMs = nowMid - startMid;
-      const days = Math.floor(diffMs / 86400000);
+      const startMid = new Date(startTs); startMid.setHours(0,0,0,0);
+      const nowMid = new Date(); nowMid.setHours(0,0,0,0);
+      const days = Math.floor((nowMid - startMid) / 86400000);
       return Math.max(0, days);
     }
 
-    // === API CountAPI ===
+    // === ENDPOINTS COUNTAPI ===
     async function countapiGet() {
       const url = `https://api.countapi.xyz/get/${encodeURIComponent(NAMESPACE)}/${encodeURIComponent(KEY)}`;
       const res = await fetch(url);
-      if (!res.ok) return null;
+      if (!res.ok) throw new Error(`GET fallo: ${res.status}`);
       const data = await res.json();
       return Number(data.value);
     }
     async function countapiCreate(initialTs) {
-      const url = `https://api.countapi.xyz/create?namespace=${encodeURIComponent(NAMESPACE)}&key=${encodeURIComponent(KEY)}&value=${initialTs}`;
-      return fetch(url); // Si ya existe, lo deja como está
+      const url = `https://api.countapi.xyz/create?namespace=${encodeURIComponent(NAMESPACE)}&key=${encodeURIComponent(KEY)}&value=${initialTs}&enable_reset=1`;
+      const res = await fetch(url);
+      // Aunque ya exista, algunos proxies devuelven 200 con el valor existente
+      if (!res.ok) throw new Error(`CREATE fallo: ${res.status}`);
+      return res.json();
     }
     async function countapiSet(newTs) {
+      // 'set' solo funciona si la clave se creó con enable_reset=1
       const url = `https://api.countapi.xyz/set/${encodeURIComponent(NAMESPACE)}/${encodeURIComponent(KEY)}?value=${newTs}`;
       const res = await fetch(url, { method: "GET" });
-      if (!res.ok) throw new Error("No se pudo establecer la fecha de inicio en CountAPI");
+      if (!res.ok) throw new Error(`SET fallo: ${res.status}`);
       return res.json();
     }
 
     async function ensureStartExists() {
-      let ts = await countapiGet();
-      if (!ts || Number.isNaN(ts)) {
-        const nowTs = Date.now();
-        await countapiCreate(nowTs);
-        ts = await countapiGet();
-        // Si create no tomó, forza set
-        if (!ts || Number.isNaN(ts)) {
-          await countapiSet(nowTs);
-          ts = await countapiGet();
-        }
+      // Reintentos simples por si CountAPI está intermitente
+      for (let i = 0; i < 3; i++) {
+        try {
+          const v = await countapiGet();
+          if (!Number.isNaN(v) && v > 0) return v;
+        } catch {}
+        try {
+          const nowTs = Date.now();
+          await countapiCreate(nowTs);
+          const v2 = await countapiGet();
+          if (!Number.isNaN(v2) && v2 > 0) return v2;
+        } catch {}
+        await new Promise(r => setTimeout(r, 500 * (i + 1)));
       }
-      return ts;
+      throw new Error("No se pudo crear/leer la clave en CountAPI.");
     }
 
     async function updateAll() {
-      showError("");
-      showSpinner(true);
+      showError(""); showSpinner(true);
       try {
         const startTs = await ensureStartExists();
-        const d = daysSince(startTs);
-        elCount.textContent = d.toLocaleString("es-CL");
+        elCount.textContent = daysSince(startTs).toLocaleString("es-CL");
         elStart.textContent = formatDate(new Date(startTs));
         markLastUpdate();
       } catch (e) {
         console.error(e);
-        showError("Ocurrió un error al obtener/actualizar el contador.");
+        showError("Error al actualizar el contador. Si persiste, intenta más tarde o usa la alternativa de abajo.");
       } finally {
         showSpinner(false);
       }
@@ -231,37 +144,29 @@
     async function resetCounter() {
       const ok = confirm("¿Reiniciar el contador y establecer la fecha de inicio como hoy?");
       if (!ok) return;
-      showError("");
-      showSpinner(true);
+      showError(""); showSpinner(true);
       try {
         const nowTs = Date.now();
         await countapiSet(nowTs);
         await updateAll();
       } catch (e) {
         console.error(e);
-        showError("No se pudo reiniciar el contador.");
+        showError("No se pudo reiniciar el contador (CountAPI puede estar caído).");
       } finally {
         showSpinner(false);
       }
     }
 
-    // Actualización al cambiar el día (medianoche local)
     function scheduleMidnightRefresh() {
       const now = new Date();
-      const nextMidnight = new Date(now);
-      nextMidnight.setHours(24,0,0,0); // siguiente medianoche local
+      const nextMidnight = new Date(now); nextMidnight.setHours(24,0,0,0);
       const ms = nextMidnight - now;
-      setTimeout(() => {
-        updateAll();
-        scheduleMidnightRefresh();
-      }, ms);
+      setTimeout(() => { updateAll(); scheduleMidnightRefresh(); }, ms);
     }
 
-    // Eventos
     btnRefresh.addEventListener("click", updateAll);
-    btnReset.addEventListener("click", resetCounter);
+    btnReset.addEventListener("click    btnReset.addEventListener("click", resetCounter);
 
-       // Init
     updateAll();
     scheduleMidnightRefresh();
   </script>
