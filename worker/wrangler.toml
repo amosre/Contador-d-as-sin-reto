@@ -1,0 +1,9 @@
+name = "contador-dias-worker"
+main = "worker.js"
+compatibility_date = "2024-06-01"
+kv_namespaces = [
+  { binding = "COUNTER_KV", id = "REEMPLAZAR_CON_ID", preview_id = "REEMPLAZAR_CON_PREVIEW_ID" }
+]
+[vars]
+ALLOWED_ORIGIN = "https://tu-usuario.github.io"
+RESET_TOKEN = "cambia-este-token-seguro"
